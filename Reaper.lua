@@ -135,6 +135,13 @@ function IsRepeatDeath(data)
     return false
 end
 
+function IsBlacklisted(name)
+    for i= 1, #ReaperBlacklist do
+        if ReaperBlacklist[i] == name then return true end
+    end
+    return false
+end
+
 local function handleEvent(self, event, ...)
     local arg = { ... }
     if event == "PLAYER_ENTERING_WORLD" then
@@ -173,7 +180,8 @@ local function handleEvent(self, event, ...)
             local decoded_data = decodeMessage(msg)
             if player_name_short ~= decoded_data["name"] then return end
 
-            if IsRepeatDeath(decoded_data) then AddToBlacklist(decoded_data["name"]) end
+            if IsBlacklisted(decoded_data["name"]) then return end
+            if IsRepeatDeath(decoded_data) then AddToBlacklist(decoded_data["name"]) return end
 
             local out = string.format(reaper_prefix .. " %s", decoded_data["name"])
             if decoded_data["guild"] and decoded_data["guild"] ~= "" then
