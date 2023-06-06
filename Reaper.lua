@@ -155,6 +155,8 @@ local function handleEvent(self, event, ...)
         local pulse = arg[2]
         local player = arg[4]
 
+        if string.find(pulse, "PULSE", 0, true) == nil then return end
+
         if SeenPlayers[player] == nil then
             SeenPlayers[player] = pulse
         end
