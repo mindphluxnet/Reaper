@@ -57,7 +57,7 @@ local function ReloadTimer(minutes)
     C_Timer.After(minutes * 60, function ()
         timer_running = false
         PlaySoundFile(568587)
-        print(reaper_prefix .. "Time to save your progress! Please use /reload when it is safe to do so.")
+        print(reaper_prefix .. " Time to save your progress! Please use /reload when it is safe to do so.")
         ReloadTimer(5)
     end)
 end
