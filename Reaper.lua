@@ -169,6 +169,17 @@ local function handleEvent(self, event, ...)
         print(reaper_prefix .. " Warning! Using Exit instead of Logout causes Hardcore addon data loss, please click Cancel NOW!")
     end
 
+    if event == "GUILD_ROSTER_UPDATE" then
+        local total, _, _ = GetNumGuildMembers()
+        for i = 1, total do
+            local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, guid = GetGuildRosterInfo(i)
+            if not isOnline and SeenPlayers[name] ~= nil then
+                SeenPlayers[name] = nil
+            end
+        end
+
+    end
+
     if event == "CHAT_MSG_CHANNEL" then
         local _, channel_name = string.split(" ", arg[4])
         if channel_name ~= "hcdeathalertschannel" then return end
@@ -222,6 +233,7 @@ ReaperForm:RegisterEvent("PLAYER_ENTERING_WORLD")
 ReaperForm:RegisterEvent("PLAYER_LOGIN")
 ReaperForm:RegisterEvent("CHAT_MSG_ADDON")
 ReaperForm:RegisterEvent("PLAYER_QUITING")
+ReaperForm:RegisterEvent("GUILD_ROSTER_UPDATE")
 
 if not C_ChatInfo.IsAddonMessagePrefixRegistered("HardcoreAddon") then
     C_ChatInfo.RegisterAddonMessagePrefix("HardcoreAddon")
