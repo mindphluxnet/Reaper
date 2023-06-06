@@ -194,6 +194,7 @@ local function handleEvent(self, event, ...)
             SeenPlayers[player] = pulse
         end
 
+        -- update players who have updated their addon
         if SeenPlayers[player] ~= nil and SeenPlayers[player] ~= pulse then
             SeenPlayers[player] = pulse
         end
