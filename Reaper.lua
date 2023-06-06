@@ -3,10 +3,11 @@ ReaperBlacklist = {}
 SeenPlayers = {}
 
 local timer_running = false
-local hc_version = "0.11.31"
+local hc_version = { 0, 11, 31 }
 local reaper_prefix = "|cffFF9933Reaper:|r"
 local GREEN = "|cff00ff33"
 local RED = "|cffff3300"
+local outdated_warning = false
 
 local CLASSES = {
     -- Classic:
@@ -142,6 +143,38 @@ function IsBlacklisted(name)
     return false
 end
 
+function GetAddonVersionFromPulse(pulse)
+    local version = string.sub(pulse, 7)
+    local t = {}
+
+    for i in string.gmatch(version, "%d+") do
+        table.insert(t, tonumber(i))
+    end
+
+    local major = t[1]
+    local minor = t[2]
+    local build = t[3]
+
+    return major, minor, build
+end
+
+function CompareAddonVersion(pulse, isOutdated)
+    local major, minor, build = GetAddonVersionFromPulse(pulse)
+
+    if major == nil or minor == nil or build == nil then return end
+
+    if isOutdated then
+        if major < hc_version[1] then return true end
+        if minor < hc_version[2] then return true end
+        if minor == hc_version[2] and build < hc_version[3] then return true end
+    else
+        if major > hc_version[1] then return true end
+        if minor > hc_version[2] then return true end
+        if minor == hc_version[2] and build > hc_version[3] then return true end
+    end
+    return false
+end
+
 local function handleEvent(self, event, ...)
     local arg = { ... }
     if event == "PLAYER_ENTERING_WORLD" then
@@ -163,6 +196,11 @@ local function handleEvent(self, event, ...)
 
         if SeenPlayers[player] ~= nil and SeenPlayers[player] ~= pulse then
             SeenPlayers[player] = pulse
+        end
+
+        if(CompareAddonVersion(pulse, false)) and not outdated_warning then
+            outdated_warning = true
+            print(reaper_prefix .. string.format(" Your Hardcore addon is outdated! Player %s is using version %s; please update at your nearest convenience.", player, string.sub(pulse, 7)))
         end
     end
 
@@ -249,15 +287,23 @@ local function ReaperCommandHandler(msg)
     msg = string.lower(msg)
     if msg == "audit" then
         print(reaper_prefix .. " Player audit")
-        for key, value in pairs(SeenPlayers) do
-            local version = string.sub(value, 7)
-            local col = RED
-            if version == hc_version then
-                col = GREEN
+        local total, _, _ = GetNumGuildMembers()
+        for i = 1, total do
+            local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, guid = GetGuildRosterInfo(i)
+            if isOnline then
+                if SeenPlayers[name] == nil then
+                    print(string.format("%s: %sNo addon detected|r", name, RED))
+                else
+                    local pulse = SeenPlayers[name]
+                    local col = RED
+                    if not CompareAddonVersion(pulse, true) then
+                        col = GREEN
+                    end
+                    local major, minor, build = GetAddonVersionFromPulse(pulse)
+                    print(string.format("%s: %s%d.%d.%d|r", name, col, major, minor, build))
+                end
             end
-            print(string.format("%s: %s%s|r", key, col, version))
         end
-
     end
     if msg == "recent" then
 
