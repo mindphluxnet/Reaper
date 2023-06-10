@@ -2,12 +2,15 @@ ReaperData = {}
 ReaperBlacklist = {}
 SeenPlayers = {}
 
+local CTL = _G.ChatThrottleLib
 local timer_running = false
 local hc_version = { 0, 11, 31 }
 local reaper_prefix = "|cffFF9933Reaper:|r"
 local GREEN = "|cff00ff33"
 local RED = "|cffff3300"
+local ORANGE = "|cffffa500"
 local outdated_warning = false
+local requested_character = nil
 
 local CLASSES = {
     -- Classic:
@@ -185,23 +188,46 @@ local function handleEvent(self, event, ...)
     end
 
     if event == "CHAT_MSG_ADDON" then
-        local pulse = arg[2]
+        local payload = arg[2]
         local player = arg[4]
 
-        if string.find(pulse, "PULSE", 0, true) == nil then return end
+        local cmd, _ = strsplit("$", payload)
 
-        if SeenPlayers[player] == nil then
-            SeenPlayers[player] = pulse
-        end
+        if cmd == "PULSE" then
+            if SeenPlayers[player] == nil then
+                SeenPlayers[player] = payload
+            end
 
-        -- update players who have updated their addon
-        if SeenPlayers[player] ~= nil and SeenPlayers[player] ~= pulse then
-            SeenPlayers[player] = pulse
-        end
+            -- update players who have updated their addon
+            if SeenPlayers[player] ~= nil and SeenPlayers[player] ~= payload then
+                SeenPlayers[player] = payload
+            end
 
-        if(CompareAddonVersion(pulse, false)) and not outdated_warning then
-            outdated_warning = true
-            print(reaper_prefix .. string.format(" Your Hardcore addon is outdated! Player %s is using version %s; please update at your nearest convenience.", player, string.sub(pulse, 7)))
+            if(CompareAddonVersion(payload, false)) and not outdated_warning then
+                outdated_warning = true
+                print(reaper_prefix .. string.format(" Your Hardcore addon is outdated! Player %s is using version %s; please update at your nearest convenience.", player, string.sub(payload, 7)))
+            end
+        elseif cmd == "CHARACTER_INFO" then
+            if player ~= requested_character then return end
+            requested_character = nil
+            local version_str, creation_time, achievements_str, _, party_mode_str, _, _, team_str, hc_tag, passive_achievements_str, verif_status, verif_details = strsplit("|", payload)
+            print(string.format(reaper_prefix .. " Hardcore Information for %s", player))
+            local verify = "Passed"
+            local col = GREEN
+            if verif_status == "FAIL" then
+                verify = "Failed: " .. verif_details
+                col = RED
+            elseif verif_status == "PENDING" then
+                verify = "Pending appeal: " .. verif_details
+                col = ORANGE
+            elseif verif_status == nil then
+                verify = "Unknown (unsupported version)"
+                col = RED
+            end
+            print(string.format("Verification: %s%s|r", col, verify))
+            print(string.format("Creation date: %s", date("%Y-%m-%d %H:%M:%S", creation_time)))
+            print(string.format("Hardcore tag: %s", hc_tag))
+            print(string.format("Group mode: %s", party_mode_str))
         end
     end
 
@@ -222,12 +248,12 @@ local function handleEvent(self, event, ...)
     end
 
     if event == "CHAT_MSG_CHANNEL" then
-        local _, channel_name = string.split(" ", arg[4])
+        local _, channel_name = strsplit(" ", arg[4])
         if channel_name ~= "hcdeathalertschannel" then return end
-        local command, msg = string.split("$", arg[1])
+        local command, msg = strsplit("$", arg[1])
 
         if command == "1" then
-            local player_name_short, _ = string.split("-", arg[2])
+            local player_name_short, _ = strsplit("-", arg[2])
             if msg == nil then return end
             local decoded_data = decodeMessage(msg)
             if player_name_short ~= decoded_data["name"] then return end
@@ -306,8 +332,22 @@ local function ReaperCommandHandler(msg)
             end
         end
     end
-    if msg == "recent" then
+    if msg == "inspect" then
+        if not UnitIsPlayer("target") then
+            print(reaper_prefix .. " You need to select a player target.")
+            return
+        end
+        local name, realm = UnitName("target")
+        if realm == nil then realm = GetNormalizedRealmName() end
+        local target = name .. "-" .. realm
+        requested_character = target
+        CTL:SendAddonMessage("ALERT", "HardcoreAddon", "REQUEST_CHARACTER_INFO$", "WHISPER", target)
 
+        -- if the target player's addon didn't respond after 2 seconds either the player doesn't have the Hardcore addon running or something else is up
+        -- so we'll reset the requested_character variable to enable inspection again
+        C_Timer.After(2, function ()
+            requested_character = nil
+        end)
     end
 end
 
