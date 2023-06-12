@@ -52,6 +52,29 @@ local function PlayerData(name, guild, source_id, race_id, class_id, level, inst
     }
 end
 
+local function IsQuestLineCompletable(quest_id)
+    if CraftingQuests[quest_id] == nil then return true end
+
+---@diagnostic disable-next-line: undefined-global
+    for skillIndex = 1, GetNumSkillLines() do
+---@diagnostic disable-next-line: undefined-global
+        local skillName, isHeader = GetSkillLineInfo(skillIndex)
+        if not isHeader then
+            if skillName == CraftingQuests[quest_id] then return true end
+        end
+    end
+
+    return false
+end
+
+local function GetRequiredProfession(quest_id)
+    if CraftingQuests[quest_id] ~=nil then
+        return CraftingQuests[quest_id]
+    end
+
+    return nil
+end
+
 local function ReloadTimer(minutes)
     -- warns the player after $minutes have passed so they don't forget to save their progress
     -- first call sets the minutes to 30, repeat warnings are issued with a much shorter frequency
@@ -244,7 +267,18 @@ local function handleEvent(self, event, ...)
                 SeenPlayers[name] = nil
             end
         end
+    end
 
+    if event == "QUEST_ACCEPTED" then
+        local index = arg[1]
+        local quest_id = arg[2]
+        if IsQuestLineCompletable(quest_id) then return end
+---@diagnostic disable-next-line: undefined-global
+        local title = GetQuestLogTitle(index)
+        local required_profession = GetRequiredProfession(quest_id)
+        if required_profession ~=nil then
+            print(reaper_prefix .. string.format(" Heads up! The quest line starting with \"%s\" requires items made using the %s profession and can't be completed by you.", title, required_profession))
+        end
     end
 
     if event == "CHAT_MSG_CHANNEL" then
@@ -301,6 +335,7 @@ ReaperForm:RegisterEvent("PLAYER_LOGIN")
 ReaperForm:RegisterEvent("CHAT_MSG_ADDON")
 ReaperForm:RegisterEvent("PLAYER_QUITING")
 ReaperForm:RegisterEvent("GUILD_ROSTER_UPDATE")
+ReaperForm:RegisterEvent("QUEST_ACCEPTED")
 
 if not C_ChatInfo.IsAddonMessagePrefixRegistered("HardcoreAddon") then
     C_ChatInfo.RegisterAddonMessagePrefix("HardcoreAddon")
@@ -343,10 +378,14 @@ local function ReaperCommandHandler(msg)
         requested_character = target
         CTL:SendAddonMessage("ALERT", "HardcoreAddon", "REQUEST_CHARACTER_INFO$", "WHISPER", target)
 
-        -- if the target player's addon didn't respond after 2 seconds either the player doesn't have the Hardcore addon running or something else is up
+        -- if the target player's addon didn't respond after 2 seconds either the player doesn't have the Hardcore addon running
         -- so we'll reset the requested_character variable to enable inspection again
         C_Timer.After(2, function ()
-            requested_character = nil
+            local target = requested_character
+            if requested_character ~= nil then
+                print(reaper_prefix .. " " .. target .. " does not seem to have the Hardcore addon active.")
+                requested_character = nil
+            end
         end)
     end
 end

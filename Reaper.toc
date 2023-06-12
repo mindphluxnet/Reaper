@@ -1,15 +1,16 @@
 ## Interface: 11403
-## Title: Reaper 1.5
+## Title: Reaper 1.51
 ## Notes: Displays all Hardcore deaths on the server cluster, collects death logs and reminds the player to save their progress.
 ## Author: mindphlux
 ## X-License: All Rights Reserved
 ## X-Category: Leveling
-## Version: 1.5
+## Version: 1.51
 
 
 ## DefaultState: enabled
 ## SavedVariables: ReaperData, ReaperBlacklist
 
 ChatThrottleLib.lua
+CraftingQuests.lua
 Reaper.lua
 id_to_npc_classic.lua
