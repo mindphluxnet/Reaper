@@ -10,3 +10,5 @@ to display the Hardcore addon version for all guild members.
 Target a player and use the slash command
 ```/reaper inspect```
 to get a short summary about the player if they have the Hardcore addon running. I implemented this since the Hardcore addon's inspect window never worked for me.
+
+Now also displays a warning when the player accepts a quest or quest series that requires items made by a specific profession they don't have. This is a work in progress; the list of supported quests is likely incomplete and the group status is also not respected.
