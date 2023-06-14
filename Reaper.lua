@@ -1,6 +1,7 @@
 ReaperData = {}
 ReaperBlacklist = {}
 SeenPlayers = {}
+ReaperLevelRecords = {}
 
 local CTL = _G.ChatThrottleLib
 local timer_running = false
@@ -11,6 +12,9 @@ local RED = "|cffff3300"
 local ORANGE = "|cffffa500"
 local outdated_warning = false
 local requested_character = nil
+local CHEER_ALLIANCE = 568821
+local CHEER_HORDE = 569085
+local last_level = nil
 
 local CLASSES = {
     -- Classic:
@@ -203,11 +207,43 @@ end
 
 local function handleEvent(self, event, ...)
     local arg = { ... }
+
     if event == "PLAYER_ENTERING_WORLD" then
         ReloadTimer(30)
         C_Timer.After(5, function ()
             JoinDeathLogChannel()
         end)
+    end
+
+    if event == "PLAYER_LEVEL_UP" then
+
+        last_level = arg[1]
+        C_Timer.After(2, function ()
+            local class_name, _, class_id = UnitClass("player")
+
+            if ReaperLevelRecords[class_id] ~= nil then
+                if ReaperLevelRecords[class_id] < last_level then
+                    print(reaper_prefix .. string.format(" You've achieved a new personal record: level %d on a %s!", last_level, class_name))
+                    ReaperLevelRecords[class_id] = last_level
+                    local faction = UnitFactionGroup("player")
+                    if faction == "Alliance" then
+                        PlaySoundFile(CHEER_ALLIANCE)
+                    else
+                        PlaySoundFile(CHEER_HORDE)
+                    end
+                end
+            else
+                print(reaper_prefix .. string.format(" You've achieved a new personal record: level %d on a %s!", last_level, class_name))
+                ReaperLevelRecords[class_id] = last_level
+                local faction = UnitFactionGroup("player")
+                if faction == "Alliance" then
+                    PlaySoundFile(CHEER_ALLIANCE)
+                else
+                    PlaySoundFile(CHEER_HORDE)
+                end
+            end
+        end)
+
     end
 
     if event == "CHAT_MSG_ADDON" then
@@ -336,6 +372,7 @@ ReaperForm:RegisterEvent("CHAT_MSG_ADDON")
 ReaperForm:RegisterEvent("PLAYER_QUITING")
 ReaperForm:RegisterEvent("GUILD_ROSTER_UPDATE")
 ReaperForm:RegisterEvent("QUEST_ACCEPTED")
+ReaperForm:RegisterEvent("PLAYER_LEVEL_UP")
 
 if not C_ChatInfo.IsAddonMessagePrefixRegistered("HardcoreAddon") then
     C_ChatInfo.RegisterAddonMessagePrefix("HardcoreAddon")
