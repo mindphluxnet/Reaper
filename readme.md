@@ -9,4 +9,4 @@ Reaper is meant as a companion addon to Hardcore, adding the following features:
 - displays a warning when the player accepts a quest requiring a profession they don't have
 - remembers the highest level you got per class and displays a new personal record on level up
 
-Uses [ChatThrottleLib](https://wowpedia.fandom.com/wiki/ChatThrottleLib) by Mikk
+Uses [ChatThrottleLib](https://wowpedia.fandom.com/wiki/ChatThrottleLib) by Mikk and code taken from [Hardcore](https://github.com/Zarant/WoW_Hardcore).
