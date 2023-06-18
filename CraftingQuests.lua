@@ -9,4 +9,5 @@ CraftingQuests={
     [210] = "Mining", -- Krazek's Cookery, followup quest requires Mining
     [343] = "Mining", -- Speaking of Fortitude, chain includes a quest requiring Mining
     [1203] = "Blacksmithing", -- Jarl needs a Blade, requires Blacksmithing
+    [1838] = "Mining", -- Brutal Armor, requires Iron Bars made by Mining
 }
