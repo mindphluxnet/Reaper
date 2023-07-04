@@ -5,7 +5,7 @@ ReaperLevelRecords = {}
 
 local CTL = _G.ChatThrottleLib
 local timer_running = false
-local hc_version = { 0, 11, 31 }
+local hc_version = { 0, 11, 42 }
 local reaper_prefix = "|cffFF9933Reaper:|r"
 local GREEN = "|cff00ff33"
 local RED = "|cffff3300"
@@ -77,19 +77,6 @@ local function GetRequiredProfession(quest_id)
     end
 
     return nil
-end
-
-local function ReloadTimer(minutes)
-    -- warns the player after $minutes have passed so they don't forget to save their progress
-    -- first call sets the minutes to 30, repeat warnings are issued with a much shorter frequency
-    if timer_running then return end
-    timer_running = true
-    C_Timer.After(minutes * 60, function ()
-        timer_running = false
-        PlaySoundFile(568587)
-        print(reaper_prefix .. " Time to save your progress! Please use /reload when it is safe to do so.")
-        ReloadTimer(5)
-    end)
 end
 
 local function decodeMessage(msg)
@@ -209,7 +196,6 @@ local function handleEvent(self, event, ...)
     local arg = { ... }
 
     if event == "PLAYER_ENTERING_WORLD" then
-        ReloadTimer(30)
         C_Timer.After(5, function ()
             JoinDeathLogChannel()
         end)
